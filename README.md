@@ -1,4 +1,4 @@
-# MinerU Literature Extractor — Modular CPU/GPU
+# PdfExtractor
 
 Paket Python modular untuk mengekstrak PDF dengan MinerU 4.x dan membuat database literatur. Google Colab dapat menjalankan paket dari GitHub sebagai runner; PDF dan hasil ekstraksi tetap disimpan di Google Drive.
 
@@ -24,7 +24,7 @@ Backend mode dipilih melalui CLI `--device cpu|gpu`. Jangan mencampur cache mode
 ## Struktur
 
 ```text
-pdf-extractor/
+PdfExtractor/
 ├── requirements.txt
 ├── README.md
 ├── run_extraction.py
