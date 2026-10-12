@@ -68,6 +68,8 @@ python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device
 
 Tier `basic` bukan pengganti setara untuk Standard karena tidak menjalankan VLM.
 
+Jika preflight vLLM menghasilkan `TypeError: Config() got an unexpected keyword argument 'deprecated'`, jangan lanjutkan ekstraksi. Error ini muncul saat mengimpor internal TorchDynamo, sebelum MinerU memproses PDF. Notebook yang diperbarui akan mencetak signature dan lokasi modul `Config`, serta perintah untuk memasang ulang wheel PyTorch yang sama dengan versi/CUDA saat ini. Jalankan perintah itu pada sel baru, restart runtime, lalu jalankan notebook dari awal. Ini memperbaiki kemungkinan file internal PyTorch yang tidak sinkron tanpa sengaja mengganti versi Torch; bila error tetap ada, kirim signature/lokasi modul dan versi `vllm` untuk menentukan pasangan versi yang benar.
+
 Pilihan utama CLI:
 
 - `--input-dir`: folder PDF sumber.
