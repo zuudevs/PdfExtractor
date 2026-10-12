@@ -15,6 +15,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input-dir", required=True, type=Path, help="Folder berisi PDF.")
     parser.add_argument("--output-dir", required=True, type=Path, help="Folder output (wajib terpisah dari input).")
     parser.add_argument("--device", choices=["cpu", "gpu"], default="cpu", help="cpu atau gpu (NVIDIA CUDA; mis. Colab T4).")
+    parser.add_argument(
+        "--vlm-engine", choices=["auto", "llama-cpp", "vllm"], default="auto",
+        help="Engine VLM untuk tier standard/advanced. auto memilih llama-cpp pada CPU dan vLLM pada GPU; llama-cpp juga dapat dipakai sebagai fallback kompatibilitas di GPU.",
+    )
     parser.add_argument("--tier", choices=["flash", "basic", "standard", "advanced"], default="standard")
     parser.add_argument("--ocr-mode", default="auto", choices=["auto", "txt", "ocr"])
     parser.add_argument("--non-recursive", action="store_true", help="Jangan mencari PDF di subfolder.")
@@ -43,6 +47,7 @@ def main() -> None:
         continue_on_error=not args.stop_on_error,
         model_source=args.model_source,
         runtime_mode=args.device,
+        vlm_engine=args.vlm_engine,
     )
     # Import pipeline only after paths/config are parsed. Pipeline applies backend
     # settings before importing MinerU itself.
