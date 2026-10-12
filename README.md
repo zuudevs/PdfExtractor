@@ -50,14 +50,18 @@ python -m pip install -r requirements.txt
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device cpu --tier standard --prepare-models
 ```
 
-GPU NVIDIA/Linux (pastikan runtime CUDA aktif terlebih dahulu):
+GPU NVIDIA/Linux (pastikan runtime CUDA aktif terlebih dahulu). Pilih salah satu jalur instalasi berikut pada environment bersih.
+
+VLM dengan vLLM untuk throughput tinggi, bila wheel/runtime kompatibel:
 
 ```bash
-# Opsi throughput tinggi (gunakan bila wheel vLLM kompatibel):
 python -m pip install -r requirements.txt "mineru[full]>=4.0,<5"
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine vllm --prepare-models
+```
 
-# Opsi kompatibilitas untuk runtime Colab yang bermasalah dengan vLLM:
+Jalur kompatibilitas saat vLLM gagal dipasang atau diimpor (small models dan model tabel tetap dikonfigurasi untuk GPU):
+
+```bash
 python -m pip install -r requirements.txt "mineru[torch]>=4.0,<5"
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine llama-cpp --prepare-models
 ```
