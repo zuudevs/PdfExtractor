@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.PdfExtractor.PdfExtractor.config import ExtractorConfig
-from scripts.PdfExtractor.PdfExtractor.normalizer import (
+from PdfExtractor.config import ExtractorConfig
+from PdfExtractor.normalizer import (
     collect_doi_candidates,
     extract_asset_paths,
     get_pages_and_blocks,

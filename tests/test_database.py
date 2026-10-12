@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.PdfExtractor.PdfExtractor.config import ExtractorConfig
-from scripts.PdfExtractor.PdfExtractor.database import export_database
+from PdfExtractor.config import ExtractorConfig
+from PdfExtractor.database import export_database
 
 
 class DatabaseTests(unittest.TestCase):

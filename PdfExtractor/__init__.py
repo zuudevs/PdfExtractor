@@ -1,3 +1,3 @@
-"""Modular MinerU PDF extraction to literature database (CPU-focused)."""
+"""Modular MinerU PDF extraction to a literature database (CPU/GPU)."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

@@ -1,37 +1,34 @@
-# MinerU Literature Extractor — Modular CPU Version
+# MinerU Literature Extractor — Modular CPU/GPU
 
-Paket modular Python untuk mengekstrak PDF menggunakan MinerU 4.x dan menyusun hasilnya menjadi database literatur. Paket ini dibuat dari notebook `PdfExtractor.ipynb` yang diberikan, dengan backend inferensi CPU yang diatur secara eksplisit.
+Paket Python modular untuk mengekstrak PDF dengan MinerU 4.x dan membuat database literatur. Google Colab dapat menjalankan paket dari GitHub sebagai runner; PDF dan hasil ekstraksi tetap disimpan di Google Drive.
 
-## Apa yang diekstrak
+## Fitur
 
-- **Teks dan blok**: teks per halaman/blok, judul, heading, caption, formula bila dikenali, bounding box jika disediakan MinerU, serta JSON mentah.
-- **Tabel**: caption, teks/HTML bila tersedia, halaman, bounding box, referensi aset gambar, dan JSON sumber.
-- **Figure/gambar/chart**: tipe, caption/teks terkait, halaman, bounding box, referensi aset, dan JSON sumber.
-- **Metadata dokumen**: SHA-256, metadata PDF, jumlah halaman, kandidat judul dan DOI, status pemrosesan, serta peringatan audit.
-- **Database**: SQLite dengan tabel teks, elemen, tabel, figure, aset, dan full-text search FTS5 jika tersedia.
-- **Ekspor**: CSV dan JSONL agar mudah dipakai untuk analisis atau migrasi.
+- Teks/heading/caption per blok, halaman, bounding box jika tersedia.
+- Tabel dan figure/gambar beserta caption, halaman, bounding box dan referensi aset jika tersedia.
+- Menyimpan keluaran mentah MinerU: `markdown.md`, `middle_json.json`, `structured_content.json`, dan folder aset.
+- Metadata dokumen, SHA-256, jumlah halaman, status, serta audit kegagalan.
+- SQLite, CSV, JSONL, dan inventory gambar.
+- Resume hasil valid untuk menghindari ekstraksi ulang.
 
-## CPU mode yang digunakan
+## Mode runtime
 
-Paket ini sengaja **tidak memasang `mineru[full]`**. `requirements.txt` memasang paket dasar MinerU 4.x dan `pypdf`, lalu kode menetapkan konfigurasi sebelum MinerU diimpor:
+### CPU
+Konfigurasi MinerU 4.x: small-model backend `onnx`, VLM `llama-cpp`, dan table models `cpu`. Instal paket dasar dari `requirements.txt`.
 
-- `MINERU_MODEL_SMALL_BACKEND=onnx`
-- `MINERU_MODEL_VLM_ENGINE=llama-cpp`
-- `MINERU_TABLE_DEVICE=cpu`
-- `CUDA_VISIBLE_DEVICES=-1`
+### GPU NVIDIA (Google Colab T4, bila runtime tersedia)
+Konfigurasi: small-model backend `torch`, VLM engine `vllm`, dan table models `cuda`. Runner Colab menginstal `mineru[full]>=4.0,<5` untuk mode GPU. Dibutuhkan runtime Linux dengan CUDA yang kompatibel, GPU terpasang, serta wheel vLLM yang cocok. Notebook melakukan pemeriksaan awal GPU dan memvalidasi backend sebelum ekstraksi; instalasi full dapat tetap gagal jika wheel/dependensi yang tersedia tidak cocok dengan image Colab aktif.
 
-Kombinasi ONNX + llama.cpp adalah konfigurasi CPU yang didokumentasikan MinerU 4.x untuk `standard` / `advanced`. CPU biasanya lebih lambat daripada GPU. Untuk `standard`, sediakan RAM yang memadai; dokumentasi MinerU menyebut sekitar 8 GB sebagai titik awal untuk konfigurasi CPU dan merekomendasikan 16 GB atau lebih untuk beban lebih berat. Kebutuhan sebenarnya bergantung pada PDF dan proses lain yang berjalan.
+Backend mode dipilih melalui CLI `--device cpu|gpu`. Jangan mencampur cache model untuk backend berbeda: script menyiapkan dan memverifikasi model sesuai mode yang dipilih.
 
-## Struktur paket
+## Struktur
 
 ```text
-PdfExtractor/
+pdf-extractor/
 ├── requirements.txt
 ├── README.md
 ├── run_extraction.py
 ├── PdfExtractor/
-│   ├── __init__.py
-│   ├── __main__.py
 │   ├── cli.py
 │   ├── config.py
 │   ├── database.py
@@ -42,97 +39,50 @@ PdfExtractor/
 │   ├── scanner.py
 │   └── utils.py
 └── tests/
-    └── test_normalizer.py
 ```
 
-## Instalasi lokal (Linux/macOS/Windows WSL)
+## Instalasi
 
-Disarankan menggunakan Python 3.12 dengan virtual environment.
-
-```bash
-python -m venv .venv
-```
-
-Aktifkan environment, kemudian:
+CPU:
 
 ```bash
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device cpu --tier standard --prepare-models
 ```
 
-MinerU mendukung Python 3.10–3.14, tetapi dukungan engine dan paket turunannya dapat berbeda antarsistem operasi. Jalankan dari environment yang sama untuk instalasi dan ekstraksi.
-
-## Google Colab + Google Drive
-
-1. Unggah dan ekstrak ZIP paket ini ke `/content/PdfExtractor` atau salin folder paket ke runtime Colab.
-2. Mount Google Drive:
-
-   ```python
-   from google.colab import drive
-   drive.mount('/content/drive')
-   ```
-
-3. Instal dependensi dari folder paket:
-
-   ```python
-   %cd /content/PdfExtractor
-   %pip install -r requirements.txt
-   ```
-
-   Jika Colab meminta restart session setelah instalasi, lakukan restart lalu mount Drive kembali.
-
-4. Jalankan ekstraksi dari sel notebook dengan perintah shell berikut. Ganti lokasi input dan output sesuai folder Drive Anda:
-
-   ```bash
-   !python run_extraction.py \
-     --input-dir "/content/drive/MyDrive/Paper_PDF" \
-     --output-dir "/content/drive/MyDrive/literature_mineru_db" \
-     --tier standard \
-     --prepare-models
-   ```
-
-`--prepare-models` mengunduh dan memverifikasi model untuk backend CPU yang sama sebelum PDF diproses. Jalankan pada penggunaan pertama atau ketika model belum ada di cache. Model akan disimpan pada lokasi cache MinerU, bukan di folder PDF sumber. Model memerlukan ruang disk dan akses internet ketika pertama kali diunduh.
-
-Jika model CPU yang sesuai sudah diunduh dan diverifikasi, penggunaan berikutnya dapat melewati unduh/validasi model:
+GPU NVIDIA/Linux (pastikan runtime CUDA aktif terlebih dahulu):
 
 ```bash
-!python run_extraction.py \
-  --input-dir "/content/drive/MyDrive/Paper_PDF" \
-  --output-dir "/content/drive/MyDrive/literature_mineru_db" \
-  --tier standard
+python -m pip install -r requirements.txt "mineru[full]>=4.0,<5"
+python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --prepare-models
 ```
 
-> Catatan: ketika proses dijalankan dari Colab, file `.py` dijalankan sebagai proses Python tersendiri. Pengaturan backend CPU diterapkan di dalam proses tersebut sebelum modul MinerU diimpor.
+Pilihan utama CLI:
 
-## Opsi CLI
-
-```bash
-python run_extraction.py --help
-```
-
-Opsi yang umum:
-
-- `--input-dir`: folder input yang berisi PDF.
-- `--output-dir`: folder untuk hasil ekstraksi dan database; gunakan folder terpisah dari input.
-- `--tier`: `flash`, `basic`, `standard`, atau `advanced`; default `standard`.
-- `--ocr-mode`: `auto`, `txt`, atau `ocr`; default `auto`.
-- `--non-recursive`: hanya scan folder input, tanpa subfolder.
-- `--no-resume`: proses ulang semua PDF, termasuk hasil valid yang sebelumnya tersimpan.
-- `--stop-on-error`: hentikan batch jika sebuah PDF gagal; defaultnya lanjut ke PDF berikutnya.
+- `--input-dir`: folder PDF sumber.
+- `--output-dir`: folder output yang terpisah dari input.
+- `--device`: `cpu` atau `gpu` (NVIDIA CUDA; bukan GPU AMD Windows).
+- `--tier`: `flash`, `basic`, `standard`, atau `advanced`.
+- `--ocr-mode`: `auto`, `txt`, atau `ocr`.
+- `--prepare-models`: unduh dan verifikasi model untuk backend yang dipilih.
 - `--model-source`: `auto`, `huggingface`, atau `modelscope`.
-- `--prepare-models`: unduh dan verifikasi model untuk tier/backend CPU yang dipilih.
+- `--no-resume`: proses ulang hasil yang sudah valid.
+- `--stop-on-error`: hentikan batch bila satu PDF gagal.
 
-## Hasil output
+## Google Colab runner
+
+Gunakan notebook `MinerU_Colab_GitHub_Runner.ipynb`. Isi URL repo GitHub publik pada sel konfigurasi, pilih runtime GPU di Colab jika ingin `DEVICE_MODE="gpu"`, dan sesuaikan folder input/output Google Drive. Untuk private repo, autentikasi GitHub perlu disiapkan terpisah; jangan menanam token akses ke notebook publik.
+
+## Output
 
 ```text
-literature_mineru_db/
-├── documents/
-│   └── <nama_dokumen>__<id>/
-│       ├── markdown.md
-│       ├── middle_json.json
-│       ├── structured_content.json
-│       ├── images/
-│       ├── _SUCCESS.json atau _ERROR.json
+OUTPUT_DIR/
+├── documents/<nama>__<id>/
+│   ├── markdown.md
+│   ├── middle_json.json
+│   ├── structured_content.json
+│   ├── images/
+│   ├── _SUCCESS.json / _ERROR.json
 └── database/
     ├── literature_database.sqlite
     ├── literature_documents.csv
@@ -145,19 +95,12 @@ literature_mineru_db/
     └── literature_image_inventory.csv
 ```
 
-Nomor `page_idx` dari JSON dipertahankan sebagai zero-based dan `page_number` diekspor sebagai one-based. Teks/caption/HTML mengikuti informasi yang disediakan MinerU; pipeline tidak menjamin OCR atau deteksi tabel sempurna. Periksa `literature_extraction_audit.csv` dan bandingkan beberapa halaman dengan PDF sumber sebelum memakai hasil untuk analisis ilmiah.
+## Catatan kualitas
 
-## Troubleshooting
+Pipeline mempertahankan teks, HTML/JSON, caption, dan referensi yang disediakan MinerU; ia tidak menjamin OCR/tabel sempurna. Audit CSV dan cek sampel terhadap PDF asli sebelum memakai hasil dalam analisis ilmiah. Mode Standard/VLM dapat memerlukan memori dan GPU yang memadai. Jalankan satu PDF percobaan sebelum batch besar.
 
-- **Kernel / proses restart atau berhenti mendadak**: mode CPU menghindari penggunaan CUDA, tetapi `standard` masih intensif dan dapat memerlukan banyak RAM. Coba satu PDF dulu dan periksa RAM tersedia.
-- **Download model gagal**: coba `--model-source modelscope` jika sumber default/Hugging Face tidak dapat diakses di jaringan Anda.
-- **`mineru-kit` tidak ditemukan saat `--prepare-models`**: pastikan `requirements.txt` dipasang pada environment Python yang sama dengan perintah `python run_extraction.py`.
-- **PDF gagal diproses**: periksa file `_ERROR.json` di folder dokumen dan kolom `error_message`/`warnings_json` pada audit CSV.
-- **Aset gambar hilang**: cek referensi yang disimpan di `middle_json.json` dan `literature_image_inventory.csv`; beberapa gambar dapat tertanam dalam struktur JSON alih-alih menjadi file terpisah.
+## Referensi resmi MinerU 4.x
 
-## Referensi resmi
-
-- MinerU Quick Start: https://opendatalab.github.io/MinerU/quick_start/
-- MinerU Tiers and Runtimes: https://opendatalab.github.io/MinerU/usage/tiers/
-- MinerU Model Downloads and Configuration: https://github.com/opendatalab/MinerU/blob/master/docs/en/usage/model_source.md
-- MinerU Python SDK: https://opendatalab.github.io/MinerU/usage/sdk_api/
+- https://opendatalab.github.io/MinerU/usage/tiers/
+- https://opendatalab.github.io/MinerU/quick_start/extension_modules/
+- https://opendatalab.github.io/MinerU/usage/model_source/

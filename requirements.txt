@@ -1,4 +1,4 @@
-# CPU-focused MinerU 4.x setup.
-# Do NOT replace this with mineru[full]; that extra targets accelerated engines.
+# Base requirements used for CPU mode and shared pipeline utilities.
+# Colab GPU runner installs mineru[full] separately when DEVICE_MODE="gpu".
 mineru>=4.0,<5
 pypdf>=5,<7

@@ -7,6 +7,7 @@ from typing import Literal
 
 Tier = Literal["flash", "basic", "standard", "advanced"]
 ModelSource = Literal["auto", "huggingface", "modelscope"]
+RuntimeMode = Literal["cpu", "gpu"]
 
 
 @dataclass(slots=True)
@@ -19,7 +20,7 @@ class ExtractorConfig:
     skip_valid_results: bool = True
     continue_on_error: bool = True
     model_source: ModelSource = "auto"
-    cpu_only: bool = True
+    runtime_mode: RuntimeMode = "cpu"
 
     def __post_init__(self) -> None:
         self.input_dir = Path(self.input_dir).expanduser().resolve()
@@ -28,12 +29,18 @@ class ExtractorConfig:
             raise ValueError(f"Tier tidak didukung: {self.tier!r}")
         if self.model_source not in {"auto", "huggingface", "modelscope"}:
             raise ValueError(f"Sumber model tidak didukung: {self.model_source!r}")
+        if self.runtime_mode not in {"cpu", "gpu"}:
+            raise ValueError(f"Mode runtime tidak didukung: {self.runtime_mode!r}")
         if not self.input_dir.exists():
             raise FileNotFoundError(f"Folder input tidak ditemukan: {self.input_dir}")
         if not self.input_dir.is_dir():
             raise NotADirectoryError(f"INPUT_DIR bukan folder: {self.input_dir}")
         if self.input_dir == self.output_dir:
             raise ValueError("INPUT_DIR dan OUTPUT_DIR tidak boleh sama.")
+        # Prevent accidentally putting outputs within the input tree (could make
+        # recursive scans messy and consume storage in the source collection).
+        if self.input_dir in self.output_dir.parents:
+            raise ValueError("OUTPUT_DIR tidak boleh berada di dalam INPUT_DIR.")
 
     @property
     def documents_dir(self) -> Path:
@@ -44,22 +51,51 @@ class ExtractorConfig:
         return self.output_dir / "database"
 
     def configure_runtime(self) -> None:
-        """Set backend variables before MinerU is imported in this process.
+        """Set MinerU 4.x model backends before importing MinerU.
 
-        MinerU 4.x's documented CPU combination is ONNX for small models and
-        llama.cpp for the VLM. Table models are explicitly assigned to CPU.
+        CPU: ONNX small models + llama.cpp VLM + CPU table models.
+        NVIDIA GPU (Linux/Colab): Torch small models + vLLM VLM + CUDA table models.
         """
-        if self.cpu_only:
+        os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+        if self.runtime_mode == "cpu":
             os.environ["MINERU_MODEL_SMALL_BACKEND"] = "onnx"
             os.environ["MINERU_MODEL_VLM_ENGINE"] = "llama-cpp"
             os.environ["MINERU_TABLE_DEVICE"] = "cpu"
-            # Hide CUDA GPUs from libraries that autodetect CUDA. This does not
-            # disable CPU execution; it prevents the Colab T4 from being selected.
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-            os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+        else:
+            # GPU mode is intended for a compatible NVIDIA CUDA runtime, such as
+            # Google Colab T4. Do not set CUDA_VISIBLE_DEVICES=-1 in this mode.
+            if os.environ.get("CUDA_VISIBLE_DEVICES") == "-1":
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            os.environ["MINERU_MODEL_SMALL_BACKEND"] = "torch"
+            os.environ["MINERU_TABLE_DEVICE"] = "cuda"
+            needs_vlm = self.tier in {"standard", "advanced"}
+            if needs_vlm:
+                os.environ["MINERU_MODEL_VLM_ENGINE"] = "vllm"
+                import importlib.util
+                if importlib.util.find_spec("vllm") is None:
+                    raise RuntimeError(
+                        "Mode GPU Standard/Advanced dipilih, tetapi package vllm tidak ditemukan. "
+                        "Di Colab, instal dependensi dengan mineru[full]>=4.0,<5."
+                    )
+            else:
+                # Basic/Flash do not run a local VLM; avoid forcing an absent VLM engine.
+                os.environ.pop("MINERU_MODEL_VLM_ENGINE", None)
+            try:
+                import torch
+                if not torch.cuda.is_available():
+                    raise RuntimeError(
+                        "Mode GPU dipilih tetapi torch.cuda.is_available() bernilai False. "
+                        "Di Colab, pilih Runtime > Change runtime type > T4 GPU lalu restart runtime."
+                    )
+            except ImportError as exc:
+                raise RuntimeError(
+                    "Mode GPU membutuhkan PyTorch dengan dukungan CUDA. "
+                    "Gunakan instalasi MinerU full pada runtime NVIDIA yang kompatibel."
+                ) from exc
         if self.model_source == "auto":
-            # Let MinerU probe the configured/default sources. An inherited value
-            # such as the literal string "auto" may be rejected by some releases.
+            # Let MinerU probe configured/default sources. Some releases reject
+            # an inherited literal value 'auto' in MINERU_MODEL_SOURCE.
             os.environ.pop("MINERU_MODEL_SOURCE", None)
         else:
             os.environ["MINERU_MODEL_SOURCE"] = self.model_source

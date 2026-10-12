@@ -3,3 +3,8 @@ __pycache__/
 .venv/
 .env
 output/
+outputs/
+.cache/
+.ipynb_checkpoints/
+*.sqlite-wal
+*.sqlite-shm

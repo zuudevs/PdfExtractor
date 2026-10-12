@@ -47,7 +47,7 @@ def _reusable_success(item: dict[str, Any], config: ExtractorConfig, mineru_ver:
             and metadata.get("tier") == config.tier
             and metadata.get("ocr_mode") == config.ocr_mode
             and metadata.get("mineru_version") == mineru_ver
-            and metadata.get("cpu_only") == config.cpu_only
+            and metadata.get("runtime_mode", "cpu") == config.runtime_mode
         )
     except Exception:
         return False
@@ -77,12 +77,12 @@ def process_one_pdf(item: dict[str, Any], config: ExtractorConfig, mineru_ver: s
 
     print(
         f"\n[START] {item['source_relative_path']} | tier={config.tier} | "
-        f"pages={item.get('page_count_pdf')} | CPU mode={config.cpu_only}",
+        f"pages={item.get('page_count_pdf')} | device={config.runtime_mode}",
         flush=True,
     )
     try:
         # Important: MinerU is imported only after configure_runtime() has set the
-        # CPU backend environment in pipeline.py.
+        # selected CPU/GPU backend environment in pipeline.py.
         from mineru.parser import parse
         from mineru.parser.writer import FileBasedDataWriter
 
@@ -116,10 +116,10 @@ def process_one_pdf(item: dict[str, Any], config: ExtractorConfig, mineru_ver: s
             "tier": config.tier,
             "ocr_mode": config.ocr_mode,
             "mineru_version": mineru_ver,
-            "cpu_only": config.cpu_only,
-            "small_backend": "onnx" if config.cpu_only else "auto",
-            "vlm_engine": "llama-cpp" if config.cpu_only else "auto",
-            "table_device": "cpu" if config.cpu_only else "auto",
+            "runtime_mode": config.runtime_mode,
+            "small_backend": "onnx" if config.runtime_mode == "cpu" else "torch",
+            "vlm_engine": ("llama-cpp" if config.runtime_mode == "cpu" else "vllm") if config.tier in {"standard", "advanced"} else "not-used",
+            "table_device": "cpu" if config.runtime_mode == "cpu" else "cuda",
             "started_at_utc": started,
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
             "page_count_mineru": mineru_page_count,
@@ -141,7 +141,7 @@ def process_one_pdf(item: dict[str, Any], config: ExtractorConfig, mineru_ver: s
             "tier": config.tier,
             "ocr_mode": config.ocr_mode,
             "mineru_version": mineru_ver,
-            "cpu_only": config.cpu_only,
+            "runtime_mode": config.runtime_mode,
             "failed_at_utc": datetime.now(timezone.utc).isoformat(),
             "exception_type": type(exc).__name__,
             "error": str(exc),
