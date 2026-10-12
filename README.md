@@ -17,7 +17,7 @@ Paket Python modular untuk mengekstrak PDF dengan MinerU 4.x dan membuat databas
 Konfigurasi MinerU 4.x: small-model backend `onnx`, VLM `llama-cpp`, dan table models `cpu`. Instal paket dasar dari `requirements.txt`.
 
 ### GPU NVIDIA (Google Colab T4, bila runtime tersedia)
-Konfigurasi: small-model backend `torch` dan table models `cuda`. Engine VLM untuk tier `standard`/`advanced` dapat dipilih terpisah: `vllm` untuk throughput tinggi atau `llama-cpp` sebagai opsi kompatibilitas bila wheel vLLM gagal diimpor/diinisialisasi. Pada Colab, `runner.ipynb` memilih `llama-cpp` untuk VLM secara otomatis pada Tesla T4; small models dan table models tetap dikonfigurasi untuk CUDA. Engine `llama-cpp` dapat lebih lambat karena akselerasi GPU-nya bergantung pada build runtime.
+Konfigurasi: small-model backend `torch` dan table models `cuda`. Untuk tier `standard`/`advanced`, engine `vllm` dipakai secara default pada GPU NVIDIA, termasuk Tesla T4. Pilihan ini memerlukan wheel vLLM yang cocok dengan runtime Python/CUDA dan GPU. Pada Colab yang dilaporkan dalam issue, proses mati dengan SIGSEGV segera setelah memilih `llama-cpp-engine`, sehingga notebook tidak lagi memilih llama-cpp secara otomatis pada T4. Jangan menganggap penggantian engine sudah tervalidasi sampai satu PDF percobaan berhasil diekstrak.
 
 Backend mode dipilih melalui CLI `--device cpu|gpu`; engine VLM dipilih melalui `--vlm-engine auto|llama-cpp|vllm`. Jangan mencampur cache model untuk backend berbeda: script menyiapkan dan memverifikasi model sesuai kombinasi yang dipilih.
 
