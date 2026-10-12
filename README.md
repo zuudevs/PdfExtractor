@@ -59,12 +59,14 @@ python -m pip install -r requirements.txt "mineru[full]>=4.0,<5"
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine vllm --prepare-models
 ```
 
-Jalur kompatibilitas saat vLLM gagal dipasang atau diimpor (small models dan model tabel tetap dikonfigurasi untuk GPU):
+Jika vLLM gagal dipasang atau diimpor, jangan otomatis beralih ke `llama-cpp` untuk Standard: pada runtime Colab yang dilaporkan, engine itu mengalami SIGSEGV saat inisialisasi. Untuk menguji jalur GPU tanpa VLM terlebih dahulu, gunakan tier `basic`:
 
 ```bash
 python -m pip install -r requirements.txt "mineru[torch]>=4.0,<5"
-python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine llama-cpp --prepare-models
+python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier basic --prepare-models
 ```
+
+Tier `basic` bukan pengganti setara untuk Standard karena tidak menjalankan VLM.
 
 Pilihan utama CLI:
 
