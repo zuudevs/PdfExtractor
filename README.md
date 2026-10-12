@@ -70,6 +70,8 @@ Tier `basic` bukan pengganti setara untuk Standard karena tidak menjalankan VLM.
 
 Jika preflight vLLM menghasilkan `TypeError: Config() got an unexpected keyword argument 'deprecated'`, jangan lanjutkan ekstraksi. Error ini muncul saat mengimpor internal TorchDynamo, sebelum MinerU memproses PDF. Notebook yang diperbarui akan mencetak signature dan lokasi modul `Config`, serta perintah untuk memasang ulang wheel PyTorch yang sama dengan versi/CUDA saat ini. Jalankan perintah itu pada sel baru, restart runtime, lalu jalankan notebook dari awal. Ini memperbaiki kemungkinan file internal PyTorch yang tidak sinkron tanpa sengaja mengganti versi Torch; bila error tetap ada, kirim signature/lokasi modul dan versi `vllm` untuk menentukan pasangan versi yang benar.
 
+Pada worker GPU, runner juga menjalankan smoke test `Conv2d` sebelum memuat MinerU. Jika test mendeteksi `CUDNN_STATUS_SUBLIBRARY_VERSION_MISMATCH`, runner mencoba ulang dengan `torch.backends.cudnn.enabled=False`. Fallback dipakai hanya jika convolution CUDA berhasil saat cuDNN dinonaktifkan; ini workaround yang dapat memperlambat parsing, bukan perbaikan permanen library yang tercampur. Jika test fallback gagal, dokumen dihentikan dengan error diagnostik. Latar belakang terkait: [PyTorch issue #188892](https://github.com/pytorch/pytorch/issues/188892).
+
 Pilihan utama CLI:
 
 - `--input-dir`: folder PDF sumber.
