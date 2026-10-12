@@ -53,9 +53,12 @@ python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device
 GPU NVIDIA/Linux (pastikan runtime CUDA aktif terlebih dahulu):
 
 ```bash
+# Opsi throughput tinggi (gunakan bila wheel vLLM kompatibel):
 python -m pip install -r requirements.txt "mineru[full]>=4.0,<5"
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine vllm --prepare-models
-# Bila vLLM tidak kompatibel dengan runtime Colab:
+
+# Opsi kompatibilitas untuk runtime Colab yang bermasalah dengan vLLM:
+python -m pip install -r requirements.txt "mineru[torch]>=4.0,<5"
 python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine llama-cpp --prepare-models
 ```
 
@@ -64,6 +67,7 @@ Pilihan utama CLI:
 - `--input-dir`: folder PDF sumber.
 - `--output-dir`: folder output yang terpisah dari input.
 - `--device`: `cpu` atau `gpu` (NVIDIA CUDA; bukan GPU AMD Windows).
+- `--vlm-engine`: `auto`, `vllm`, atau `llama-cpp`; mode GPU dengan `llama-cpp` tetap menggunakan Torch/CUDA untuk small models dan CUDA untuk model tabel.
 - `--tier`: `flash`, `basic`, `standard`, atau `advanced`.
 - `--ocr-mode`: `auto`, `txt`, atau `ocr`.
 - `--prepare-models`: unduh dan verifikasi model untuk backend yang dipilih.
