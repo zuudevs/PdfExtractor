@@ -78,6 +78,7 @@ Pilihan utama CLI:
 - `--model-source`: `auto`, `huggingface`, atau `modelscope`.
 - `--no-resume`: proses ulang hasil yang sudah valid.
 - `--stop-on-error`: hentikan batch bila satu PDF gagal.
+- Jika kode native crash saat parsing, worker terisolasi menulis `documents/<document_id>/_ERROR.json` (termasuk exit code/signal dan cuplikan log) serta `_WORKER.log`; jika proses utama mati sebelum worker, notebook menyimpan `OUTPUT_DIR/_RUN_ERROR.json`.
 
 ## Google Colab runner
 
