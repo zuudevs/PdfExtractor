@@ -25,11 +25,11 @@ Kombinasi ONNX + llama.cpp adalah konfigurasi CPU yang didokumentasikan MinerU 4
 ## Struktur paket
 
 ```text
-mineru_literature_cpu/
+PdfExtractor/
 ├── requirements.txt
 ├── README.md
 ├── run_extraction.py
-├── mineru_literature_cpu/
+├── PdfExtractor/
 │   ├── __init__.py
 │   ├── __main__.py
 │   ├── cli.py
@@ -64,7 +64,7 @@ MinerU mendukung Python 3.10–3.14, tetapi dukungan engine dan paket turunannya
 
 ## Google Colab + Google Drive
 
-1. Unggah dan ekstrak ZIP paket ini ke `/content/mineru_literature_cpu` atau salin folder paket ke runtime Colab.
+1. Unggah dan ekstrak ZIP paket ini ke `/content/PdfExtractor` atau salin folder paket ke runtime Colab.
 2. Mount Google Drive:
 
    ```python
@@ -75,7 +75,7 @@ MinerU mendukung Python 3.10–3.14, tetapi dukungan engine dan paket turunannya
 3. Instal dependensi dari folder paket:
 
    ```python
-   %cd /content/mineru_literature_cpu
+   %cd /content/PdfExtractor
    %pip install -r requirements.txt
    ```
 

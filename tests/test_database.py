@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.mineru_literature_cpu.mineru_literature_cpu.config import ExtractorConfig
-from scripts.mineru_literature_cpu.mineru_literature_cpu.database import export_database
+from scripts.PdfExtractor.PdfExtractor.config import ExtractorConfig
+from scripts.PdfExtractor.PdfExtractor.database import export_database
 
 
 class DatabaseTests(unittest.TestCase):
