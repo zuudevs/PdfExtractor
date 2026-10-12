@@ -118,7 +118,7 @@ def process_one_pdf(item: dict[str, Any], config: ExtractorConfig, mineru_ver: s
             "mineru_version": mineru_ver,
             "runtime_mode": config.runtime_mode,
             "small_backend": "onnx" if config.runtime_mode == "cpu" else "torch",
-            "vlm_engine": ("llama-cpp" if config.runtime_mode == "cpu" else "vllm") if config.tier in {"standard", "advanced"} else "not-used",
+            "vlm_engine": config.effective_vlm_engine or "not-used",
             "table_device": "cpu" if config.runtime_mode == "cpu" else "cuda",
             "started_at_utc": started,
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),

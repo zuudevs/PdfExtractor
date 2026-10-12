@@ -17,9 +17,9 @@ Paket Python modular untuk mengekstrak PDF dengan MinerU 4.x dan membuat databas
 Konfigurasi MinerU 4.x: small-model backend `onnx`, VLM `llama-cpp`, dan table models `cpu`. Instal paket dasar dari `requirements.txt`.
 
 ### GPU NVIDIA (Google Colab T4, bila runtime tersedia)
-Konfigurasi: small-model backend `torch`, VLM engine `vllm`, dan table models `cuda`. Runner Colab menginstal `mineru[full]>=4.0,<5` untuk mode GPU. Dibutuhkan runtime Linux dengan CUDA yang kompatibel, GPU terpasang, serta wheel vLLM yang cocok. Notebook melakukan pemeriksaan awal GPU dan memvalidasi backend sebelum ekstraksi; instalasi full dapat tetap gagal jika wheel/dependensi yang tersedia tidak cocok dengan image Colab aktif.
+Konfigurasi: small-model backend `torch` dan table models `cuda`. Engine VLM untuk tier `standard`/`advanced` dapat dipilih terpisah: `vllm` untuk throughput tinggi atau `llama-cpp` sebagai opsi kompatibilitas bila wheel vLLM gagal diimpor/diinisialisasi. Pada Colab, `runner.ipynb` memilih `llama-cpp` untuk VLM secara otomatis pada Tesla T4; small models dan table models tetap dikonfigurasi untuk CUDA. Engine `llama-cpp` dapat lebih lambat karena akselerasi GPU-nya bergantung pada build runtime.
 
-Backend mode dipilih melalui CLI `--device cpu|gpu`. Jangan mencampur cache model untuk backend berbeda: script menyiapkan dan memverifikasi model sesuai mode yang dipilih.
+Backend mode dipilih melalui CLI `--device cpu|gpu`; engine VLM dipilih melalui `--vlm-engine auto|llama-cpp|vllm`. Jangan mencampur cache model untuk backend berbeda: script menyiapkan dan memverifikasi model sesuai kombinasi yang dipilih.
 
 ## Struktur
 
@@ -54,7 +54,9 @@ GPU NVIDIA/Linux (pastikan runtime CUDA aktif terlebih dahulu):
 
 ```bash
 python -m pip install -r requirements.txt "mineru[full]>=4.0,<5"
-python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --prepare-models
+python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine vllm --prepare-models
+# Bila vLLM tidak kompatibel dengan runtime Colab:
+python run_extraction.py --input-dir ./pdf --output-dir ./literature_db --device gpu --tier standard --vlm-engine llama-cpp --prepare-models
 ```
 
 Pilihan utama CLI:
@@ -71,7 +73,7 @@ Pilihan utama CLI:
 
 ## Google Colab runner
 
-Gunakan notebook `MinerU_Colab_GitHub_Runner.ipynb`. Isi URL repo GitHub publik pada sel konfigurasi, pilih runtime GPU di Colab jika ingin `DEVICE_MODE="gpu"`, dan sesuaikan folder input/output Google Drive. Untuk private repo, autentikasi GitHub perlu disiapkan terpisah; jangan menanam token akses ke notebook publik.
+Gunakan notebook `runner.ipynb`. Isi URL repo GitHub publik pada sel konfigurasi, pilih runtime GPU di Colab jika ingin `DEVICE_MODE="gpu"`, dan sesuaikan folder input/output Google Drive. Untuk private repo, autentikasi GitHub perlu disiapkan terpisah; jangan menanam token akses ke notebook publik.
 
 ## Output
 

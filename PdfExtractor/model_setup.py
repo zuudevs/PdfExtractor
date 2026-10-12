@@ -20,14 +20,9 @@ def prepare_models(config: ExtractorConfig) -> None:
         return
 
     download_tier = "basic" if config.tier == "basic" else "standard"
-    if config.runtime_mode == "cpu":
-        common = ["--small-backend", "onnx"]
-        if download_tier == "standard":
-            common.extend(["--vlm-engine", "llama-cpp"])
-    else:
-        common = ["--small-backend", "torch"]
-        if download_tier == "standard":
-            common.extend(["--vlm-engine", "vllm"])
+    common = ["--small-backend", "onnx" if config.runtime_mode == "cpu" else "torch"]
+    if config.tier in {"standard", "advanced"}:
+        common.extend(["--vlm-engine", config.effective_vlm_engine or "llama-cpp"])
 
     download = ["mineru-kit", "models", "download", "--tier", download_tier, *common]
     verify = ["mineru-kit", "models", "verify", "--tier", download_tier, *common]

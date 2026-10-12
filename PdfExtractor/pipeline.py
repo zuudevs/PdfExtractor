@@ -23,7 +23,7 @@ def run_pipeline(config: ExtractorConfig, prepare_model_files: bool = False) -> 
     print(f"MinerU version : {mineru_ver}")
     print(f"Runtime mode   : {config.runtime_mode.upper()}")
     print(f"Small backend  : {'ONNX' if config.runtime_mode == 'cpu' else 'Torch'}")
-    print(f"VLM engine     : {('llama-cpp' if config.runtime_mode == 'cpu' else 'vLLM') if config.tier in {'standard', 'advanced'} else 'not used for this tier'}")
+    print(f"VLM engine     : {config.effective_vlm_engine or 'not used for this tier'}")
     print(f"Table device   : {'CPU' if config.runtime_mode == 'cpu' else 'CUDA'}")
     print(f"Tier           : {config.tier}")
     print(f"OCR mode       : {config.ocr_mode}")
