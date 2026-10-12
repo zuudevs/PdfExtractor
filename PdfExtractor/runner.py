@@ -90,7 +90,11 @@ def _process_one_pdf_impl(item: dict[str, Any], config: ExtractorConfig, mineru_
     try:
         # Run inside the isolated worker: changing torch.backends.cudnn.enabled
         # in the parent CLI process would not affect this subprocess.
-        cudnn_compatibility = configure_cudnn_compatibility(config.runtime_mode)
+        try:
+            cudnn_compatibility = configure_cudnn_compatibility(config.runtime_mode)
+        except Exception:
+            cudnn_compatibility = "failed"
+            raise
 
         # Important: MinerU is imported only after runtime and CUDA library
         # compatibility checks have run in this process.
