@@ -66,7 +66,7 @@ class CudnnCompatibilityTests(unittest.TestCase):
             ]
         )
         with patch.dict(sys.modules, {"torch": fake_torch}):
-            with self.assertRaisesRegex(RuntimeError, "fallback Conv2d juga gagal"):
+            with self.assertRaisesRegex(RuntimeError, "fallback.*juga gagal"):
                 configure_cudnn_compatibility("gpu")
 
         self.assertTrue(cudnn.enabled)
