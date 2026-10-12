@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import ExtractorConfig, package_version
+from .cuda_compat import configure_cudnn_compatibility
 from .utils import json_load
 
 REQUIRED_OUTPUTS = ("markdown.md", "middle_json.json", "structured_content.json")
@@ -79,6 +80,7 @@ def _process_one_pdf_impl(item: dict[str, Any], config: ExtractorConfig, mineru_
         shutil.rmtree(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc).isoformat()
+    cudnn_compatibility = "not-checked"
 
     print(
         f"\n[START] {item['source_relative_path']} | tier={config.tier} | "
@@ -86,8 +88,16 @@ def _process_one_pdf_impl(item: dict[str, Any], config: ExtractorConfig, mineru_
         flush=True,
     )
     try:
-        # Important: MinerU is imported only after configure_runtime() has set the
-        # selected CPU/GPU backend environment in pipeline.py.
+        # Run inside the isolated worker: changing torch.backends.cudnn.enabled
+        # in the parent CLI process would not affect this subprocess.
+        try:
+            cudnn_compatibility = configure_cudnn_compatibility(config.runtime_mode)
+        except Exception:
+            cudnn_compatibility = "failed"
+            raise
+
+        # Important: MinerU is imported only after runtime and CUDA library
+        # compatibility checks have run in this process.
         from mineru.parser import parse
         from mineru.parser.writer import FileBasedDataWriter
 
@@ -125,6 +135,7 @@ def _process_one_pdf_impl(item: dict[str, Any], config: ExtractorConfig, mineru_
             "small_backend": "onnx" if config.runtime_mode == "cpu" else "torch",
             "vlm_engine": config.effective_vlm_engine or "not-used",
             "table_device": "cpu" if config.runtime_mode == "cpu" else "cuda",
+            "cudnn_compatibility": cudnn_compatibility,
             "started_at_utc": started,
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
             "page_count_mineru": mineru_page_count,
@@ -147,6 +158,7 @@ def _process_one_pdf_impl(item: dict[str, Any], config: ExtractorConfig, mineru_
             "ocr_mode": config.ocr_mode,
             "mineru_version": mineru_ver,
             "runtime_mode": config.runtime_mode,
+            "cudnn_compatibility": cudnn_compatibility,
             "failed_at_utc": datetime.now(timezone.utc).isoformat(),
             "exception_type": type(exc).__name__,
             "error": str(exc),
